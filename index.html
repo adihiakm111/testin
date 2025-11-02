@@ -1,92 +1,142 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8" />
-<title>Snake Smooth Wrap</title>
-<style>
-  body {
-    display:flex;flex-direction:column;justify-content:center;align-items:center;
-    height:100vh;margin:0;
-    background:linear-gradient(135deg,#d1c4e9,#b39ddb);
-    overflow:hidden;transition:background .5s;
-  }
-  #container {
-    width:80vw;height:200px;position:relative;border-radius:20px;
-    background:rgba(255,255,255,0.2);box-shadow:inset 0 0 20px rgba(0,0,0,0.2);
-  }
-  #ball {
-    width:150px;height:150px;border-radius:50%;
-    background:#ff3d00;position:absolute;bottom:25px;left:0;
-    box-shadow:0 10px 20px rgba(0,0,0,0.3);
-  }
-  .button-container{display:flex;gap:40px;margin-top:50px}
-  button{
-    padding:15px 30px;font-size:18px;font-weight:bold;
-    background:#673ab7;color:#fff;border:none;border-radius:8px;
-    cursor:pointer;user-select:none;
-    transition:.2s;
-  }
-  button:hover{transform:scale(1.05);background:#5e35b1;}
-</style>
+  <meta charset="UTF-8">
+  <title>Snake-Style Moving Ball (Hold to Move)</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #d1c4e9, #b39ddb);
+      transition: background 0.5s ease;
+      overflow: hidden;
+    }
+
+    #container {
+      width: 80vw;
+      height: 200px;
+      position: relative;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+
+    #ball {
+      width: 150px;
+      height: 150px;
+      background-color: #ff3d00;
+      border-radius: 50%;
+      position: absolute;
+      left: 0;
+      bottom: 25px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+
+    button {
+      margin-top: 50px;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #673ab7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease, background 0.3s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background: #5e35b1;
+      transform: scale(1.05);
+    }
+
+    .button-container {
+      display: flex;
+      gap: 40px;
+    }
+  </style>
 </head>
 <body>
-  <div id="container"><div id="ball"></div></div>
-  <div class="button-container">
-    <button id="leftBtn">👈 Move Left</button>
-    <button id="rightBtn">👉 Move Right</button>
-  </div>
+
+<div id="container">
+  <div id="ball"></div>
+</div>
+
+<div class="button-container">
+  <button id="leftBtn">👈 Move Left</button>
+  <button id="rightBtn">👉 Move Right</button>
+</div>
 
 <script>
-const ball=document.getElementById("ball");
-const container=document.getElementById("container");
-const body=document.body;
-const leftBtn=document.getElementById("leftBtn");
-const rightBtn=document.getElementById("rightBtn");
+  const ball = document.getElementById("ball");
+  const container = document.getElementById("container");
+  const body = document.body;
+  const leftBtn = document.getElementById("leftBtn");
+  const rightBtn = document.getElementById("rightBtn");
 
-let pos=0;
-let dir=null;
-let speed=3;
-let animationId=null;
+  let position = 0;
+  let direction = null;
+  let speed = 3;
+  let animationId = null;
 
-function randomBG(){
-  const hue=Math.floor(Math.random()*360);
-  body.style.background=`linear-gradient(135deg,hsl(${hue},70%,80%),hsl(${(hue+40)%360},60%,70%))`;
-}
-
-function move(){
-  const cW=container.clientWidth;
-  const bW=ball.offsetWidth;
-  const total=cW+bW; // total travel distance including outside
-  if(dir==="right"){
-    pos=(pos+speed)%total; // continuous looping
-  }else if(dir==="left"){
-    pos=(pos-speed+total)%total; // keep positive loop
+  function getRandomColor() {
+    const hue = Math.floor(Math.random() * 360);
+    return `linear-gradient(135deg, hsl(${hue}, 70%, 80%), hsl(${(hue + 40) % 360}, 60%, 70%))`;
   }
 
-  // shift drawing area so visible wrap looks smooth
-  let drawX=pos-bW;
-  if(drawX>cW-bW)drawX-=total;
-  ball.style.left=drawX+"px";
+  function changeBackground() {
+    body.style.background = getRandomColor();
+  }
 
-  // change bg each time it crosses a full loop
-  if(pos<speed || pos>total-speed) randomBG();
+  function updatePosition() {
+    const containerWidth = container.clientWidth;
+    const ballWidth = ball.offsetWidth;
+    const maxPos = containerWidth - ballWidth;
 
-  animationId=requestAnimationFrame(move);
-}
+    if (direction === "right") {
+      position += speed;
+      if (position > maxPos) {
+        const overflow = position - maxPos;
+        position = -ballWidth + overflow;
+        changeBackground();
+      }
+    } else if (direction === "left") {
+      position -= speed;
+      if (position < -ballWidth) {
+        const overflow = -position - ballWidth;
+        position = maxPos - overflow;
+        changeBackground();
+      }
+    }
 
-function start(d){
-  dir=d;
-  if(!animationId) move();
-}
-function stop(){
-  cancelAnimationFrame(animationId);
-  animationId=null;
-}
+    ball.style.left = position + "px";
+    animationId = requestAnimationFrame(updatePosition);
+  }
 
-rightBtn.addEventListener("mouseenter",()=>start("right"));
-rightBtn.addEventListener("mouseleave",stop);
-leftBtn.addEventListener("mouseenter",()=>start("left"));
-leftBtn.addEventListener("mouseleave",stop);
+  function startMove(dir) {
+    direction = dir;
+    if (!animationId) updatePosition();
+  }
+
+  function stopMove() {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+
+rightBtn.addEventListener("mouseenter", () => startMove("right"));
+rightBtn.addEventListener("mouseleave", stopMove);
+
+leftBtn.addEventListener("mouseenter", () => startMove("left"));
+leftBtn.addEventListener("mouseleave", stopMove);
+
 </script>
+
 </body>
 </html>
